@@ -66,6 +66,7 @@ The polynomial Ridge model with added squared and interaction terms on `odometer
 ## Suggested Next Steps
 
 - Incorporate **listing-quality signals** (photo presence, description length, listing recency) as features.
+- Use clustering to produce multiple pricing models for different car classifications.
 
 ## Repository Contents
 

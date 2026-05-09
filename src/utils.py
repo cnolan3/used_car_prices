@@ -7,13 +7,14 @@ from sklearn.feature_selection import VarianceThreshold
 from sklearn.linear_model import RidgeCV
 
 CLUSTER_LABELS = { 
-    0: "Economy sedans",
-    1: "HD diesel trucks",
-    2: "Mainstream SUVs",
-    3: "Older V8 pickups",
-    4: "Sparse listings",
-    5: "Salvage/rebuilt",
-    6: "Newer premium/EV",
+    0: "Mainstream SUVs",
+    1: "Older V8 gas pickups",
+    2: "HD diesel trucks",
+    3: "Newer premium pickups",
+    4: "Economy sedans",
+    5: "Mid-tier mixed",
+    6: "Sparse listings",
+    7: "Newer EV / alt-fuel",
 }
 
 NUMERIC_COLS = ['odometer', 'age', 'model']

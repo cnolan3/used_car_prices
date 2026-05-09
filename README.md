@@ -4,6 +4,8 @@ A regression analysis of ~426,000 used vehicle listings (a Kaggle subset of a la
 
 **[Full analysis notebook → prompt_II.ipynb](prompt_II.ipynb)**
 
+<mark>**Note to the grader:**</mark> **[prompt_II.ipynb](prompt_II.ipynb)** is the version of the assignment that I was able to complete before the due date of May 6th, the **[V2](V2)** directory is a version of the assignment that I continued working on after the due date just for my own curiosity.
+
 ## Approach
 
 - **Cleaning:** dropped sentinel/placeholder values (year=1900, odometer=0 or 10M+, $0 prices), clipped extreme outliers (price > 99th percentile, odometer > 99.5th percentile), removed pre-1980 vehicles to focus on the daily-use market, dropped low-signal columns (`VIN`, `size`, `id`, `region`).

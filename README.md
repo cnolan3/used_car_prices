@@ -10,7 +10,7 @@ A regression analysis of ~426,000 used vehicle listings (a Kaggle subset of a la
 - **Cleaning:** dropped sentinel/placeholder values (year=1900, odometer=0 or 10M+, $0 prices), clipped extreme outliers (price > 99th percentile, odometer > 99.5th percentile), removed pre-1980 vehicles to focus on the daily-use market, dropped low-signal columns (`VIN`, `size`, `id`, `region`).
 - **Feature engineering:** engineered `age = 2026 − year`; one-hot encoded low-cardinality categoricals; target-encoded `model` (~30k unique values) using sklearn's cross-fitted `TargetEncoder` to avoid leakage.
 - **Modeling:** trained Linear Regression, Ridge, Lasso, and a Ridge model with polynomial features on the numeric columns. All models used `log(price)` as the target.
-- **Segmentation:** applied PCA + KMeans clustering (K=7) to identify market segments, then fit a separate polynomial Ridge model per segment to capture per-segment pricing dynamics.
+- **Segmentation:** applied PCA + KMeans clustering (K=8) to identify market segments, then fit a separate polynomial Ridge model per segment to capture per-segment pricing dynamics.
 - **Validation:** 80/20 train/test split with `RidgeCV` / `LassoCV` cross-validation for hyperparameter selection.
 
 ## Key Findings
@@ -24,9 +24,9 @@ A regression analysis of ~426,000 used vehicle listings (a Kaggle subset of a la
 | Ridge                                | $8,473     | $5,479     | 0.586     |
 | Lasso                                | $8,453     | $5,458     | 0.588     |
 | Ridge + Polynomial Features          | $7,614     | $5,128     | 0.666     |
-| **Per-cluster Polynomial Ridge**     | **$7,463** | **$4,728** | **0.679** |
+| **Per-cluster Polynomial Ridge**     | **$7,239** | **$4,603** | **0.698** |
 
-The per-cluster polynomial Ridge produced the most accurate model, explaining ~68% of price variance with a median error of roughly $4,700. Two improvements drove the gains: (1) adding squared and interaction terms on `odometer`, `age`, and the target-encoded `model` confirmed that depreciation curves are non-linear — each additional year of age and 10,000 miles of wear costs more on a near-new car than on an older one — and (2) fitting separate polynomial Ridge models on each of seven market segments captured pricing dynamics that differ meaningfully between segments.
+The per-cluster polynomial Ridge produced the most accurate model, explaining ~70% of price variance with a median error of roughly $4,600. Two improvements drove the gains: (1) adding squared and interaction terms on `odometer`, `age`, and the target-encoded `model` confirmed that depreciation curves are non-linear — each additional year of age and 10,000 miles of wear costs more on a near-new car than on an older one — and (2) fitting separate polynomial Ridge models on each of eight market segments captured pricing dynamics that differ meaningfully between segments. Six of the eight clusters benefit from per-cluster modeling, with the gain concentrated in two distinct segments described below.
 
 ### Top drivers of price
 
@@ -52,47 +52,48 @@ The per-cluster polynomial Ridge produced the most accurate model, explaining ~6
 
 ### Market segments
 
-The clustering analysis identified seven distinct market segments, each with a different pricing profile. Two of them benefit substantially from segment-specific modeling, suggesting their pricing dynamics differ from the rest of the market:
+The clustering analysis identified eight distinct market segments, each with a different pricing profile. Two of them (marked ⭐) benefit substantially from segment-specific modeling, indicating their pricing dynamics differ meaningfully from the rest of the market:
 
-| Segment                  | Share | Median price | Defining traits                                          |
-| ------------------------ | ----- | ------------ | -------------------------------------------------------- |
-| Economy sedans           | 21%   | $8,000       | 4-cyl, sedan, gas, Honda/Toyota, ~14 years / 103k miles  |
-| HD diesel trucks         | 8%    | $33,000      | Diesel, V8, Ram/Ford HD, premium work trucks             |
-| Mainstream SUVs          | 18%   | $15,000      | V6, Jeep/Ford/Honda, family-vehicle bread-and-butter     |
-| Older V8 pickups         | 14%   | $14,000      | V8 gas, ~17 years old, Silverado/F-150 daily drivers     |
-| Sparse listings          | 19%   | $10,500      | Multiple missing fields — a quality signal in itself     |
-| Salvage/rebuilt **⭐**   | 3%    | $9,500       | Branded titles — discounted regardless of condition      |
-| Newer premium/EV **⭐**  | 17%   | $29,500      | ~8 years / 25k miles, alt-fuel + premium pickups + EVs   |
+| Segment                       | Share | Median price | Defining traits                                                |
+| ----------------------------- | ----- | ------------ | -------------------------------------------------------------- |
+| Mainstream SUVs               | 19%   | $9,700       | V6, Jeep / Ford / Honda; family vehicles                       |
+| Older V8 gas pickups          | 14%   | $18,000      | F-150 / Silverado / Sierra daily-driver pickups                |
+| HD diesel trucks              | 6%    | $32,500      | F-250/350 diesels, Ram HDs; premium work trucks                |
+| **Newer premium pickups ⭐** | 11%   | $29,600      | ~8 years, ~24k miles; GMC Sierra / premium Silverados          |
+| Economy sedans                | 13%   | $7,700       | 4-cyl, Honda/Toyota; high-volume cheap sedans                  |
+| Mid-tier mixed                | 13%   | $16,700      | Heterogeneous mid-aged group; sparse condition data            |
+| Sparse listings               | 16%   | $9,500       | Multiple missing fields — a quality signal in itself           |
+| **Newer EV / alt-fuel ⭐**   | 6%    | $28,600      | EVs, hybrids, plug-ins; very low miles for the age             |
 
 Two segments deserve special attention because their pricing follows rules different from the broader market:
 
-- **Salvage/rebuilt vehicles (3% of listings)** trade at a substantial discount even when other features are favorable. Title-branded inventory should be treated as a separate sourcing category with its own margin model.
-- **Newer premium / alt-fuel / EV vehicles (17% of listings)** include modern luxury pickups, hybrids, and EVs. They follow a steeper depreciation curve than ICE vehicles and command higher absolute prices; segment-specific modeling reduced prediction error here by ~$2,800 per vehicle compared to the global model.
+- **Newer premium pickups (11% of listings)** are dominated by recent-vintage GMC Sierras, premium Silverados, and similar trim-heavy gas pickups with low mileage. Trim level and configuration drive significant price variation; segment-specific modeling reduced prediction error here by ~$1,700 per vehicle compared to the global model.
+- **Newer EV / alt-fuel vehicles (6% of listings)** include modern EVs, plug-in hybrids, and alt-fuel vehicles. They follow a steeper depreciation curve than ICE vehicles and command higher absolute prices for their age and mileage; segment-specific modeling reduced prediction error here by ~$2,400 per vehicle compared to the global model — the largest improvement of any segment.
 
 ### Recommendations for Inventory Decisions
 
-1. **Prioritize clean-title inventory.** Title status is the single largest controllable risk factor in sourcing decisions.
+1. **Prioritize clean-title inventory.** Title status is the single largest controllable risk factor in sourcing decisions — salvage and rebuilt vehicles trade at roughly 30–50% discounts.
 2. **Target 0–10-year, sub-150k-mile vehicles** for the most predictable pricing range and the bulk of market volume.
 3. **Trucks and pickups are higher-margin opportunities** in the used market. They hold value better than sedans of comparable age and mileage.
 4. **Cosmetic features are less important than they appear.** Paint color and similar cosmetic factors have weak effects compared to mechanical and structural attributes.
 5. **Be cautious with sparse listings.** Vehicles with multiple missing fields tend to sell at a discount even when visible features look good.
-6. **Treat salvage/rebuilt and newer alt-fuel/EV vehicles as separate inventory classes.** Both follow distinct pricing dynamics from the rest of the market and benefit from being sourced and priced under their own rules.
+6. **Treat the highlighted segments as separate inventory classes.** Newer premium pickups and newer EV/alt-fuel vehicles each follow distinct pricing dynamics from the rest of the market and benefit from being sourced and priced under their own rules rather than blanket "any 8-year-old vehicle" heuristics.
 
 ## Limitations
 
-- The model explains ~68% of price variation; the remaining ~32% lives in factors not captured here (listing photos, exact trim level, free-text descriptions, market timing, regional supply/demand).
+- The model explains ~70% of price variation; the remaining ~30% lives in factors not captured here (listing photos, exact trim level, free-text descriptions, market timing, regional supply/demand).
 - Most accurate on mid-priced vehicles ($10k–$30k); accuracy degrades at the high and low ends.
 - Suitable for inventory-level strategy decisions, not as a per-vehicle pricing oracle.
 - Pre-1980 vehicles were excluded; classic-car pricing follows different dynamics.
 - Source data is Craigslist listings, dealer-network pricing patterns may differ.
-- Heavy-duty diesel trucks (Cluster 1) remain the hardest segment to price accurately, with per-cluster RMSE roughly 60% higher than the average — trim, towing capacity, and exact engine variant matter substantially within this segment but are not well captured in the dataset.
+- Heavy-duty diesel trucks remain the hardest segment to price accurately, with per-cluster RMSE roughly 60% higher than the average — trim, towing capacity, and exact engine variant matter substantially within this segment but are not well captured in the dataset.
 
 ## Suggested Next Steps
 
 - Incorporate **listing-quality signals** (photo presence, description length, listing recency) as features.
 - Try a **tree-based model** (Random Forest or Gradient Boosting) on the same feature matrix — likely to push R² to ~0.80–0.85 by capturing non-linear effects across all features.
 - Engineer **cross-feature interactions** (e.g., `manufacturer × age`, `type × odometer`) to capture brand- and category-specific depreciation patterns in the linear model.
-- **Re-cluster with K=8 or K=9** to see whether the heavy-duty truck segment splits productively, since it currently has the worst per-cluster fit.
+- **Source additional features for the heavy-duty truck segment.** Trim level, engine variant, and tow-package configuration would deliver disproportionate accuracy gains for the hardest-to-fit cluster.
 
 ## Repository Contents
 

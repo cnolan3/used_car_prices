@@ -2,9 +2,8 @@
 
 A regression analysis of ~426,000 used vehicle listings (a Kaggle subset of a larger Craigslist dataset) aimed at identifying the factors that most influence used car sale prices. The work follows the CRISP-DM framework and is intended to produce actionable inventory guidance for a used car dealership.
 
-**[Full analysis notebook → prompt_II.ipynb](prompt_II.ipynb)**
-
-<mark>**Note to the grader:**</mark> **[prompt_II.ipynb](prompt_II.ipynb)** is the version of the assignment that I was able to complete before the due date of May 6th, the **[V2](V2)** directory is a version of the assignment that I continued working on after the due date just for my own curiosity.
+**[Analysis notebook → 01_analysis.ipynb](notebooks/01_analysis.ipynb)**
+**[Customer facing notebook → 01_analysis.ipynb](notebooks/02_dealer_report.ipynb)**
 
 ## Approach
 
